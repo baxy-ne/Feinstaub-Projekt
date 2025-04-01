@@ -1,1 +1,1 @@
-# Feinstaub-Projekt
+# Feinstaub-Projekt by Jannik Sauer and Onur Goekcek
