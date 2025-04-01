@@ -1,1 +1,1 @@
-# Feinstaub-Projekt by Jannik Sauer and Onur Goekcek
+# Schul-Feinstaub-Projekt by Jannik Sauer and Onur Goekcek
