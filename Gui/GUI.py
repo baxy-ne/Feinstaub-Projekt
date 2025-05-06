@@ -2,20 +2,44 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from tkcalendar import DateEntry
 from datetime import date
+from tkinter import messagebox
 
-
+CONST_NOT_ALL_FIELDS_FILLED = "Please fill all fields"
 def ordner_waehlen():
     folder_selected = filedialog.askdirectory()
     zielordner_var.set(folder_selected)
 
 def daten_laden_1():
+    if not options_are_valid():
+        messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
+        return
     print(f"Daten Laden 1 {zielordner_var.get()}, {sensor_typ.get()}, {sensor_id.get()}", start_datum.get(), end_datum.get())
 
 def daten_laden_2():
+    if not options_are_valid():
+        messagebox.showerror("Error",CONST_NOT_ALL_FIELDS_FILLED)
+        return
     print("Daten Laden 2")
 
 def diagramm_akt():
+    if not options_are_valid():
+        messagebox.showerror("Error",CONST_NOT_ALL_FIELDS_FILLED)
+        return
     print("Diagramm aktualisieren")
+
+def options_are_valid():
+    if sensor_typ.get() == "" or sensor_id.get()  == "" or zielordner_var.get()  == "":
+        
+        return False
+    return True
+
+def center_window(window):
+    window.update_idletasks()
+    width = window.winfo_width()
+    height = window.winfo_height()
+    x = (window.winfo_screenwidth() // 2) - (width // 2)
+    y = (window.winfo_screenheight() // 2) - (height // 2)
+    window.geometry(f'{width}x{height}+{x}+{y}')
 
 root = tk.Tk()
 root.title("GUI Konzept")
@@ -73,5 +97,6 @@ laden_button2.grid(row=3, column=2, padx=5)
 
 diagramm_button = tk.Button(root, text="Diagramm Akt.", command=diagramm_akt)
 diagramm_button.grid(row=4, column=2, sticky="e", padx=5, pady=10)
-
+root.update()       
+center_window(root)
 root.mainloop()
