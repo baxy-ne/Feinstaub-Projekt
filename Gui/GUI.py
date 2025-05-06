@@ -5,31 +5,37 @@ from datetime import date
 from tkinter import messagebox
 
 CONST_NOT_ALL_FIELDS_FILLED = "Please fill all fields"
-def ordner_waehlen():
-    folder_selected = filedialog.askdirectory()
-    zielordner_var.set(folder_selected)
 
-def daten_laden_1():
+sensor_type_list = ["bme280","bmp180", "bmp280","ds18b20", "dht22", "hpm", "htu21d",
+                    "laerm", "pms1003", "pms3003", "pms5003", "pms7003", "ppd42ns", 
+                    "radiation_sbm-19","radiation_sbm-20","radiation_si22g","sds011",
+                    "sdc30","sht15","sht30","sht31","sht35","sht85","sps30"]
+
+
+def pick_save_folder():
+    folder_selected = filedialog.askdirectory()
+    target_folder_var.set(folder_selected)
+
+def load_data():
     if not options_are_valid():
         messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
         return
-    print(f"Daten Laden 1 {zielordner_var.get()}, {sensor_typ.get()}, {sensor_id.get()}", start_datum.get(), end_datum.get())
+    print(f"load data {target_folder_var.get()}, {sensor_type.get()}, {sensor_id.get()}", start_date.get(), end_date.get())
 
-def daten_laden_2():
+def load_data_2():
     if not options_are_valid():
         messagebox.showerror("Error",CONST_NOT_ALL_FIELDS_FILLED)
         return
-    print("Daten Laden 2")
+    print("Button 2")
 
-def diagramm_akt():
+def refresh_diagram():
     if not options_are_valid():
         messagebox.showerror("Error",CONST_NOT_ALL_FIELDS_FILLED)
         return
-    print("Diagramm aktualisieren")
+    print("refresh diagram")
 
 def options_are_valid():
-    if sensor_typ.get() == "" or sensor_id.get()  == "" or zielordner_var.get()  == "":
-        
+    if sensor_type.get() == "" or sensor_id.get()  == "" or target_folder_var.get()  == "":
         return False
     return True
 
@@ -42,61 +48,57 @@ def center_window(window):
     window.geometry(f'{width}x{height}+{x}+{y}')
 
 root = tk.Tk()
-root.title("GUI Konzept")
+root.title("GUI concept")
 
-zielordner_var = tk.StringVar()
+target_folder_var = tk.StringVar()
 
-tk.Label(root, text="DatumBereich").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+tk.Label(root, text="Date range").grid(row=0, column=0, sticky="w", padx=5, pady=5)
 
-start_datum = DateEntry(
+start_date = DateEntry(
     root,
     date_pattern='dd.MM.yyyy',
     state='readonly',
     maxdate=date.today()
 )
-start_datum.grid(row=0, column=1, padx=5)
+start_date.grid(row=0, column=1, padx=5)
 
-end_datum = DateEntry(
+end_date = DateEntry(
     root,
     date_pattern='dd.MM.yyyy',
     state='readonly',
-    mindate=start_datum.get_date(),
+    mindate=start_date.get_date(),
     maxdate=date.today()
 )
-end_datum.grid(row=0, column=2, padx=5)
+end_date.grid(row=0, column=2, padx=5)
 
 def update_end_date_limit(event):
-    new_start = start_datum.get_date()
-    end_datum.config(mindate=new_start)
-    if end_datum.get_date() < new_start:
-        end_datum.set_date(new_start)
+    new_start = start_date.get_date()
+    end_date.config(mindate=new_start)
+    if end_date.get_date() < new_start:
+        end_date.set_date(new_start)
 
-start_datum.bind("<<DateEntrySelected>>", update_end_date_limit)
+start_date.bind("<<DateEntrySelected>>", update_end_date_limit)
 
-tk.Label(root, text="SensorTyp/ID").grid(row=1, column=0, sticky="w", padx=5, pady=5)
-sensor_typ = ttk.Combobox(root, values=["bme280", 
-                                        "bmp180", "bmp280","ds18b20", "dht22", "hpm", "htu21d", "laerm", 
-                                        "pms1003", "pms3003", "pms5003", "pms7003", "ppd42ns", 
-                                        "radiation_sbm-19","radiation_sbm-20","radiation_si22g",
-                                        "sds011","sdc30","sht15","sht30","sht31","sht35","sht85","sps30", ], state='readonly')
-sensor_typ.grid(row=1, column=1, padx=5)
+tk.Label(root, text="Sensor type/ID").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+sensor_type = ttk.Combobox(root, values=sensor_type_list, state='readonly')
+sensor_type.grid(row=1, column=1, padx=5)
 sensor_id = ttk.Entry(root)
 sensor_id.grid(row=1, column=2, padx=5)
 
-tk.Label(root, text="ZielOrdner").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-zielordner_entry = tk.Entry(root, textvariable=zielordner_var, width=40, state='readonly')
-zielordner_entry.grid(row=2, column=1, padx=5)
-ordner_button = tk.Button(root, text="...", command=ordner_waehlen)
-ordner_button.grid(row=2, column=2, padx=5)
+tk.Label(root, text="target folder").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+entry_target_folder = tk.Entry(root, textvariable=target_folder_var, width=40, state='readonly')
+entry_target_folder.grid(row=2, column=1, padx=5)
+btn_pick_folder = tk.Button(root, text="...", command=pick_save_folder)
+btn_pick_folder.grid(row=2, column=2, padx=5)
 
-tk.Label(root, text="DatenLaden").grid(row=3, column=0, sticky="w", padx=5, pady=5)
-laden_button1 = tk.Button(root, text="Laden 1", command=daten_laden_1)
-laden_button1.grid(row=3, column=1, padx=5)
-laden_button2 = tk.Button(root, text="Laden 2", command=daten_laden_2)
-laden_button2.grid(row=3, column=2, padx=5)
+tk.Label(root, text="load data").grid(row=3, column=0, sticky="w", padx=5, pady=5)
+btn_load = tk.Button(root, text="Load 1", command=load_data)
+btn_load.grid(row=3, column=1, padx=5)
+btn_load_2 = tk.Button(root, text="Load 2", command=load_data_2)
+btn_load_2.grid(row=3, column=2, padx=5)
 
-diagramm_button = tk.Button(root, text="Diagramm Akt.", command=diagramm_akt)
-diagramm_button.grid(row=4, column=2, sticky="e", padx=5, pady=10)
+btn_refresh_diagram = tk.Button(root, text="refresh diagram", command=refresh_diagram)
+btn_refresh_diagram.grid(row=4, column=2, sticky="e", padx=5, pady=10)
 root.update()       
 center_window(root)
 root.mainloop()
