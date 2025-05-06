@@ -3,13 +3,12 @@ from tkinter import filedialog, ttk
 from tkcalendar import DateEntry
 from datetime import date
 from tkinter import messagebox
+from Gui.GuiHelperService import center_window
+from Gui.consts import CONST_NOT_ALL_FIELDS_FILLED
+from Gui.consts import sensor_type_list
 
-CONST_NOT_ALL_FIELDS_FILLED = "Please fill all fields"
 
-sensor_type_list = ["bme280","bmp180", "bmp280","ds18b20", "dht22", "hpm", "htu21d",
-                    "laerm", "pms1003", "pms3003", "pms5003", "pms7003", "ppd42ns", 
-                    "radiation_sbm-19","radiation_sbm-20","radiation_si22g","sds011",
-                    "sdc30","sht15","sht30","sht31","sht35","sht85","sps30"]
+
 
 
 def pick_save_folder():
@@ -39,13 +38,7 @@ def options_are_valid():
         return False
     return True
 
-def center_window(window):
-    window.update_idletasks()
-    width = window.winfo_width()
-    height = window.winfo_height()
-    x = (window.winfo_screenwidth() // 2) - (width // 2)
-    y = (window.winfo_screenheight() // 2) - (height // 2)
-    window.geometry(f'{width}x{height}+{x}+{y}')
+
 
 root = tk.Tk()
 root.title("GUI concept")
