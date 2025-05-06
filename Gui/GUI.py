@@ -3,7 +3,7 @@ from tkinter import filedialog, ttk
 from tkcalendar import DateEntry
 from datetime import date
 from tkinter import messagebox
-from Gui.center_window import center_window
+from center_window import center_window
 from consts import CONST_NOT_ALL_FIELDS_FILLED
 from consts import sensor_type_list
 
