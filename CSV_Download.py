@@ -2,22 +2,18 @@ import requests
 import gzip
 import os
 import io
+import datetime
+import calendar
 
 
-def datum_begin(datum):
-    day = datum[0:1]
-    month = datum[3:5]
-    year = datum[6:]
-    return day,month,year
 
-def datum_end(datum):
-    day = datum[0:1]
-    month = datum[3:5]
-    year = datum[6:]
-    return day,month,year
+
    
 MAIN_WEBSITE = "https://archive.sensor.community/"
 DEFAULT_DOWNLOAD_FOLDER = "./downloads"
+
+def download_folder(folder):
+    return folder
 
 def days_in_month(year, month):
     if month in [1, 3, 5, 7, 8, 10, 12]:
@@ -37,9 +33,21 @@ def build_url(year, month, day, sensor_type, sensor_id):
         return f"{MAIN_WEBSITE}{year}/{year}-{month}-{day}/{year}-{month}-{day}_{sensor_type}_sensor_{sensor_id}.csv.gz"
     else:
         return f"{MAIN_WEBSITE}{year}-{month}-{day}/{year}-{month}-{day}_{sensor_type}_sensor_{sensor_id}.csv"
- 
-def download_csv_files(year, month, sensor_type, sensor_id, folder):
-    days = days_in_month(year, month)
+
+def convert_string_to_date(date):
+    day = date[0:2]
+    month = date[3:5]
+    year = date[6:]
+    day = int(day)
+    month = int(month)
+    year = int(year)
+    datum = datetime.date(year, month, day)
+    return datum
+
+def download_csv_files(datum: datetime.date, sensor_type, sensor_id, folder):
+    year = datum.year
+    month = datum.month
+    days = calendar.monthrange(year, month)[1]
     for day in range(1, days + 1):
         url = build_url(year, month, day, sensor_type, sensor_id)
         try:
@@ -58,3 +66,7 @@ def download_csv_files(year, month, sensor_type, sensor_id, folder):
                 print(f"Downloaded: {filename}")
         except Exception as e:
             print(f"Error downloading {url}: {e}")
+    
+
+datum = convert_string_to_date("23.07.2024")
+download_csv_files(datum, 'sps30',79618,DEFAULT_DOWNLOAD_FOLDER)
