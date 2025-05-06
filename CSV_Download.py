@@ -8,11 +8,13 @@ def datum_begin(datum):
     day = datum[0:1]
     month = datum[3:5]
     year = datum[6:]
+    return day,month,year
 
 def datum_end(datum):
     day = datum[0:1]
     month = datum[3:5]
     year = datum[6:]
+    return day,month,year
    
 MAIN_WEBSITE = "https://archive.sensor.community/"
 DEFAULT_DOWNLOAD_FOLDER = "./downloads"
