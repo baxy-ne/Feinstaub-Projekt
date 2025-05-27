@@ -6,6 +6,7 @@ from tkinter import messagebox
 from center_window import center_window
 from consts import CONST_NOT_ALL_FIELDS_FILLED
 from consts import sensor_type_list
+from view_model import download_data
 
 
 def pick_save_folder():
@@ -17,6 +18,7 @@ def load_data():
         messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
         return
     print(f"load data {target_folder_var.get()} {sensor_type.get()} {sensor_id.get()}", start_date.get(), end_date.get(), target_folder_var.get())
+    download_data(start_date.get(), end_date.get(), sensor_type.get(), sensor_id.get(), target_folder_var.get())
 
 def load_data_2():
     if not options_are_valid():
