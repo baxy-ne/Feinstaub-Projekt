@@ -16,7 +16,7 @@ def load_data():
     if not options_are_valid():
         messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
         return
-    print(f"load data {target_folder_var.get()}, {sensor_type.get()}, {sensor_id.get()}", start_date.get(), end_date.get())
+    print(f"load data {target_folder_var.get()} {sensor_type.get()} {sensor_id.get()}", start_date.get(), end_date.get(), target_folder_var.get())
 
 def load_data_2():
     if not options_are_valid():
