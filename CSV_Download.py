@@ -31,6 +31,8 @@ def convert_string_to_date(date):
     return datum
 
 def download_csv_files(datum_begin: datetime.date,datum_end: datetime.date, sensor_type, sensor_id, folder):
+    datum_begin = convert_string_to_date(datum_begin)
+    datum_end = convert_string_to_date(datum_end)
     current_date = datum_begin
     while current_date <= datum_end:
         year = current_date.year
@@ -57,6 +59,5 @@ def download_csv_files(datum_begin: datetime.date,datum_end: datetime.date, sens
         current_date += datetime.timedelta(days=1)
     
 
-datum_begin = convert_string_to_date("23.07.2024")
-datum_end = convert_string_to_date("15.12.2024")
-download_csv_files(datum_begin,datum_end, 'sps30',79618,'.\downloads')
+
+# download_csv_files(datum_begin,datum_end, sensor_type,sensor_id,folder)
