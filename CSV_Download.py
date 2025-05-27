@@ -10,22 +10,8 @@ import calendar
 
    
 MAIN_WEBSITE = "https://archive.sensor.community/"
-DEFAULT_DOWNLOAD_FOLDER = "./downloads"
 
-def download_folder(folder):
-    return folder
 
-def days_in_month(year, month):
-    if month in [1, 3, 5, 7, 8, 10, 12]:
-        return 31
-    elif month in [4, 6, 9, 11]:
-        return 30
-    elif month == 2:
-        if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
-            return 29
-        return 28
-    return 0
- 
 def build_url(year, month, day, sensor_type, sensor_id):
     month = str(month).zfill(2)
     day = str(day).zfill(2)
@@ -44,11 +30,13 @@ def convert_string_to_date(date):
     datum = datetime.date(year, month, day)
     return datum
 
-def download_csv_files(datum: datetime.date, sensor_type, sensor_id, folder):
-    year = datum.year
-    month = datum.month
-    days = calendar.monthrange(year, month)[1]
-    for day in range(1, days + 1):
+def download_csv_files(datum_begin: datetime.date,datum_end: datetime.date, sensor_type, sensor_id, folder):
+    current_date = datum_begin
+    while current_date <= datum_end:
+        year = current_date.year
+        month = current_date.month
+        day = current_date.day
+        days = calendar.monthrange(year, month)[1]
         url = build_url(year, month, day, sensor_type, sensor_id)
         try:
             response = requests.get(url)
@@ -66,7 +54,9 @@ def download_csv_files(datum: datetime.date, sensor_type, sensor_id, folder):
                 print(f"Downloaded: {filename}")
         except Exception as e:
             print(f"Error downloading {url}: {e}")
+        current_date += datetime.timedelta(days=1)
     
 
-datum = convert_string_to_date("23.07.2024")
-download_csv_files(datum, 'sps30',79618,DEFAULT_DOWNLOAD_FOLDER)
+datum_begin = convert_string_to_date("23.07.2024")
+datum_end = convert_string_to_date("15.12.2024")
+download_csv_files(datum_begin,datum_end, 'sps30',79618,'.\downloads')
