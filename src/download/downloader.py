@@ -3,7 +3,6 @@ import gzip
 import os
 import io
 import datetime
-import calendar
 from src.core.database import is_file_downloaded, mark_file_downloaded, get_date_range_data
 
 MAIN_WEBSITE = "https://archive.sensor.community/"
@@ -33,7 +32,6 @@ def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sen
     datum_begin = convert_string_to_date(datum_begin)
     datum_end = convert_string_to_date(datum_end)
     
-    # Check what data we already have
     existing_dates = get_date_range_data(sensor_id, format_date_for_db(datum_begin), format_date_for_db(datum_end))
     print(f"Found {len(existing_dates)} existing data points in date range")
     
@@ -41,7 +39,6 @@ def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sen
     while current_date <= datum_end:
         current_date_str = format_date_for_db(current_date)
         
-        # Skip if we already have this date's data
         if current_date_str in existing_dates:
             print(f"Skipping {current_date_str} - data already exists")
             current_date += datetime.timedelta(days=1)

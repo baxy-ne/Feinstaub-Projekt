@@ -1,5 +1,4 @@
 import sqlite3
-from datetime import datetime
 import os
 
 def get_db_connection():
@@ -101,14 +100,15 @@ def get_date_range_data(sensor_id, start_date, end_date):
     c = conn.cursor()
     
     c.execute('''
-        SELECT date FROM sensor_data 
+        SELECT * FROM sensor_data 
         WHERE sensor_id = ? AND date BETWEEN ? AND ?
         ORDER BY date
     ''', (sensor_id, start_date, end_date))
     
-    existing_dates = [row[0] for row in c.fetchall()]
+    columns = [description[0] for description in c.description]
+    data = [dict(zip(columns, row)) for row in c.fetchall()]
     conn.close()
-    return existing_dates
+    return data
 
 def print_database_stats():
     conn = get_db_connection()

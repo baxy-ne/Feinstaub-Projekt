@@ -5,6 +5,9 @@ from datetime import date
 from src.core.view_model import download_data, process_data
 from src.core.consts import CONST_NOT_ALL_FIELDS_FILLED, sensor_type_list
 from src.gui.utils import center_window
+from src.core.plotting import plot_sensor_data
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class SensorDataGUI:
     def __init__(self, root):
@@ -102,7 +105,30 @@ class SensorDataGUI:
         if not self.options_are_valid():
             messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
             return
-        print("refresh diagram")
+            
+        # Create a new window for the diagram
+        diagram_window = tk.Toplevel(self.root)
+        diagram_window.title(f"Sensor {self.sensor_id.get()} Data")
+        diagram_window.geometry("1200x900")  # Increased window size
+        center_window(diagram_window)
+        
+        # Get the figure from plotting module
+        start_date = self.start_date.get_date().strftime('%Y-%m-%d')
+        end_date = self.end_date.get_date().strftime('%Y-%m-%d')
+        fig = plot_sensor_data(self.sensor_id.get(), start_date, end_date)
+        if fig is None:
+            messagebox.showerror("Error", "No data available for this sensor")
+            diagram_window.destroy()
+            return
+            
+        # Create canvas and add it to the window
+        canvas = FigureCanvasTkAgg(fig, master=diagram_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        # Add a close button
+        close_btn = ttk.Button(diagram_window, text="Close", command=diagram_window.destroy)
+        close_btn.pack(pady=10)
 
     def options_are_valid(self):
         if self.sensor_type.get() == "" or self.sensor_id.get() == "" or self.target_folder_var.get() == "":
