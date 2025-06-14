@@ -4,13 +4,9 @@ import os
 import io
 import datetime
 import calendar
+from database import is_file_downloaded, mark_file_downloaded, get_date_range_data
 
-
-
-
-   
 MAIN_WEBSITE = "https://archive.sensor.community/"
-
 
 def build_url(year, month, day, sensor_type, sensor_id):
     month = str(month).zfill(2)
@@ -30,20 +26,41 @@ def convert_string_to_date(date):
     datum = datetime.date(year, month, day)
     return datum
 
-def download_csv_files(datum_begin: datetime.date,datum_end: datetime.date, sensor_type, sensor_id, folder):
+def format_date_for_db(date):
+    return date.strftime('%Y-%m-%d')
+
+def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sensor_type, sensor_id, folder):
     datum_begin = convert_string_to_date(datum_begin)
     datum_end = convert_string_to_date(datum_end)
+    
+    # Check what data we already have
+    existing_dates = get_date_range_data(sensor_id, format_date_for_db(datum_begin), format_date_for_db(datum_end))
+    print(f"Found {len(existing_dates)} existing data points in date range")
+    
     current_date = datum_begin
     while current_date <= datum_end:
+        current_date_str = format_date_for_db(current_date)
+        
+        # Skip if we already have this date's data
+        if current_date_str in existing_dates:
+            print(f"Skipping {current_date_str} - data already exists")
+            current_date += datetime.timedelta(days=1)
+            continue
+            
         year = current_date.year
         month = current_date.month
         day = current_date.day
-        days = calendar.monthrange(year, month)[1]
         url = build_url(year, month, day, sensor_type, sensor_id)
+        filename = url.split('/')[-1]
+        
+        if is_file_downloaded(filename):
+            print(f"Skipping already downloaded file: {filename}")
+            current_date += datetime.timedelta(days=1)
+            continue
+            
         try:
             response = requests.get(url)
             if response.status_code == 200:
-                filename = url.split('/')[-1]
                 filepath = os.path.join(folder, filename)
                 if year < 2023:
                     filepath = filepath[:-3]
@@ -54,10 +71,7 @@ def download_csv_files(datum_begin: datetime.date,datum_end: datetime.date, sens
                     with open(filepath, 'wb') as f:
                         f.write(response.content)
                 print(f"Downloaded: {filename}")
+                mark_file_downloaded(filename)
         except Exception as e:
             print(f"Error downloading {url}: {e}")
         current_date += datetime.timedelta(days=1)
-    
-
-
-# download_csv_files(datum_begin,datum_end, sensor_type,sensor_id,folder)

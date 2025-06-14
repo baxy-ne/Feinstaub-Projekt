@@ -7,7 +7,7 @@ from center_window import center_window
 from consts import CONST_NOT_ALL_FIELDS_FILLED
 from consts import sensor_type_list
 from view_model import download_data
-
+from view_model import process_data
 
 def pick_save_folder():
     folder_selected = filedialog.askdirectory()
@@ -25,6 +25,7 @@ def load_data_2():
         messagebox.showerror("Error",CONST_NOT_ALL_FIELDS_FILLED)
         return
     print("Button 2")
+    process_data(target_folder_var.get())
 
 def refresh_diagram():
     if not options_are_valid():
@@ -74,8 +75,10 @@ start_date.bind("<<DateEntrySelected>>", update_end_date_limit)
 tk.Label(root, text="Sensor type/ID").grid(row=1, column=0, sticky="w", padx=5, pady=5)
 sensor_type = ttk.Combobox(root, values=sensor_type_list, state='readonly')
 sensor_type.grid(row=1, column=1, padx=5)
-sensor_id = ttk.Entry(root)
+sensor_type.set('sds011') 
+sensor_id = tk.Entry(root)
 sensor_id.grid(row=1, column=2, padx=5)
+sensor_id.insert(0, '31128')  
 
 tk.Label(root, text="target folder").grid(row=2, column=0, sticky="w", padx=5, pady=5)
 entry_target_folder = tk.Entry(root, textvariable=target_folder_var, width=40, state='readonly')
