@@ -1,3 +1,5 @@
+import tkinter as tk
+
 def center_window(window):
     window.update_idletasks()
     width = window.winfo_width()
