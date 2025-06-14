@@ -48,4 +48,6 @@ Feinstaub-Projekt/
 - Python 3.x
 - requests
 - tkcalendar
+- matplotlib
+- pandas
 - tkinter
