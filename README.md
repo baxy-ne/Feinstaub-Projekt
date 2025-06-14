@@ -20,7 +20,7 @@ python main.py
 - Process CSV files containing sensor data
 - Store data in SQLite database
 - View and analyze air quality measurements
-- Support for multiple sensor types (sds011, bme280)
+- Support for sensor type sds011
 
 ## Project Structure
 
