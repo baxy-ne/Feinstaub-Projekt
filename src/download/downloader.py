@@ -3,7 +3,7 @@ import gzip
 import os
 import io
 import datetime
-from src.core.database import is_file_downloaded, mark_file_downloaded, get_date_range_data
+from src.core.database import get_db_connection, is_file_downloaded, mark_file_downloaded, get_date_range_data
 
 MAIN_WEBSITE = "https://archive.sensor.community/"
 
@@ -32,6 +32,9 @@ def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sen
     datum_begin = convert_string_to_date(datum_begin)
     datum_end = convert_string_to_date(datum_end)
     
+    conn = get_db_connection()
+    c = conn.cursor()
+    
     existing_dates = get_date_range_data(sensor_id, format_date_for_db(datum_begin), format_date_for_db(datum_end))
     print(f"Found {len(existing_dates)} existing data points in date range")
     
@@ -50,7 +53,7 @@ def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sen
         url = build_url(year, month, day, sensor_type, sensor_id)
         filename = url.split('/')[-1]
         
-        if is_file_downloaded(filename):
+        if is_file_downloaded(conn, c, filename):
             print(f"Skipping already downloaded file: {filename}")
             current_date += datetime.timedelta(days=1)
             continue
@@ -68,7 +71,9 @@ def download_csv_files(datum_begin: datetime.date, datum_end: datetime.date, sen
                     with open(filepath, 'wb') as f:
                         f.write(response.content)
                 print(f"Downloaded: {filename}")
-                mark_file_downloaded(filename)
+                mark_file_downloaded(conn, c, filename)
         except Exception as e:
             print(f"Error downloading {url}: {e}")
         current_date += datetime.timedelta(days=1)
+        
+    conn.close()

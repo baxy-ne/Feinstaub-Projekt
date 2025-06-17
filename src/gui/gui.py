@@ -60,24 +60,20 @@ class SensorDataGUI:
         self.folder_btn = ttk.Button(self.root, text="...", command=self.pick_save_folder)
         self.folder_btn.grid(row=2, column=2, padx=5)
         
-        # Buttons
-        ttk.Label(self.root, text="load data").grid(row=3, column=0, sticky="w", padx=5, pady=5)
-        self.download_btn = ttk.Button(self.root, text="Download Data", command=self.load_data)
-        self.download_btn.grid(row=3, column=1, padx=5)
-        self.process_btn = ttk.Button(self.root, text="Save Data to DB", command=self.load_data_2)
-        self.process_btn.grid(row=3, column=2, padx=5)
+        # Aktions-Buttons Frame
+        action_buttons_frame = ttk.Frame(self.root)
+        action_buttons_frame.grid(row=3, column=0, columnspan=3, pady=10, sticky="ew") # sticky "ew" für horizontale Ausdehnung
+        self.root.grid_columnconfigure(1, weight=1) # Spalte 1 dehnbar machen
+
+        self.download_btn = ttk.Button(action_buttons_frame, text="Download Data", command=self.load_data)
+        self.download_btn.pack(side=tk.TOP, padx=5, pady=2, expand=True, fill=tk.X)
         
-        # Reset Button
-        self.reset_btn = ttk.Button(self.root, text="Reset DB", command=self.reset_database)
-        self.reset_btn.grid(row=3, column=3, padx=5)
+        self.diagram_btn = ttk.Button(action_buttons_frame, text="show diagram", command=self.refresh_diagram)
+        self.diagram_btn.pack(side=tk.TOP, padx=5, pady=2, expand=True, fill=tk.X)
         
-        # Diagram Button
-        self.diagram_btn = ttk.Button(self.root, text="show diagram", command=self.refresh_diagram)
-        self.diagram_btn.grid(row=4, column=2, sticky="e", padx=5, pady=10)
-        
-        # Status Label
+        # Status Label (moved to row 4 as buttons are now in row 3)
         self.status_label = ttk.Label(self.root, text="")
-        self.status_label.grid(row=5, column=0, columnspan=3, pady=10)
+        self.status_label.grid(row=4, column=0, columnspan=3, pady=10)
         
     def pick_save_folder(self):
         folder_selected = filedialog.askdirectory()
@@ -89,6 +85,8 @@ class SensorDataGUI:
             return
         print(f"load data {self.target_folder_var.get()} {self.sensor_type.get()} {self.sensor_id.get()}", 
               self.start_date.get(), self.end_date.get(), self.target_folder_var.get())
+        
+        # Lade Daten herunter
         download_data(
             self.sensor_type.get(),
             self.sensor_id.get(),
@@ -96,13 +94,10 @@ class SensorDataGUI:
             self.end_date.get(),
             self.target_folder_var.get()
         )
-
-    def load_data_2(self):
-        if not self.options_are_valid():
-            messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
-            return
-        print("Button 2")
+        
+        # Verarbeite und speichere Daten in der DB
         process_data(self.target_folder_var.get())
+        messagebox.showinfo("Erfolg", "Daten erfolgreich heruntergeladen und in Datenbank gespeichert!")
 
     def refresh_diagram(self):
         if not self.options_are_valid():

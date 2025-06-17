@@ -12,12 +12,9 @@ def init_db():
     conn = get_db_connection()
     c = conn.cursor()
     
-    # Lösche existierende Tabellen
-    c.execute('DROP TABLE IF EXISTS sensor_data')
-    
-    # Erstelle die Tabelle neu
+    # Erstelle die Tabelle sensor_data, falls sie nicht existiert
     c.execute('''
-        CREATE TABLE sensor_data (
+        CREATE TABLE IF NOT EXISTS sensor_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sensor_id TEXT NOT NULL,
             sensor_type TEXT NOT NULL,
@@ -37,40 +34,48 @@ def init_db():
         )
     ''')
     
+    # Erstelle die Tabelle downloaded_files, falls sie nicht existiert
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS downloaded_files (
+            filename TEXT PRIMARY KEY,
+            downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     conn.commit()
     conn.close()
     print("Database initialized")
 
-def is_file_downloaded(filename):
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('SELECT 1 FROM downloaded_files WHERE filename = ?', (filename,))
-    result = c.fetchone() is not None
+def is_file_downloaded(conn, cursor, filename):
+    """Prüft, ob eine Datei bereits heruntergeladen wurde.
+    Akzeptiert conn und cursor als Argumente.
+    """
+    cursor.execute('SELECT 1 FROM downloaded_files WHERE filename = ?', (filename,))
+    result = cursor.fetchone() is not None
     if result:
         print(f"File already in database: {filename}")
-    conn.close()
     return result
 
-def mark_file_downloaded(filename):
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('INSERT OR IGNORE INTO downloaded_files (filename) VALUES (?)', (filename,))
+def mark_file_downloaded(conn, cursor, filename):
+    """Markiert eine Datei als heruntergeladen.
+    Akzeptiert conn und cursor als Argumente.
+    """
+    cursor.execute('INSERT OR IGNORE INTO downloaded_files (filename) VALUES (?)', (filename,))
     conn.commit()
-    conn.close()
     print(f"Marked as downloaded: {filename}")
 
-def save_sensor_data(sensor_id, sensor_type, date, stats):
-    conn = get_db_connection()
-    c = conn.cursor()
-    
+def save_sensor_data(conn, cursor, sensor_id, sensor_type, date, stats):
+    """Speichert Sensordaten in der Datenbank.
+    Akzeptiert conn und cursor als Argumente.
+    """
     # Debug-Ausgabe vor dem Speichern
     print("\nSpeichere Daten in der Datenbank:")
     print(f"Location: {stats.get('location', 'Nicht gefunden')}")
     print(f"Lat: {stats.get('lat', 'Nicht gefunden')}")
     print(f"Lon: {stats.get('lon', 'Nicht gefunden')}")
     
-    c.execute('''
-        INSERT INTO sensor_data 
+    cursor.execute('''
+        INSERT OR IGNORE INTO sensor_data 
         (sensor_id, sensor_type, date, timestamp, max_p1, max_p2, min_p1, min_p2, avg_p1, avg_p2, location, lat, lon)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
@@ -89,9 +94,12 @@ def save_sensor_data(sensor_id, sensor_type, date, stats):
         stats.get('lon')
     ))
     
-    conn.commit()
-    conn.close()
-    print(f"Saved data for sensor {sensor_id} on {date}")
+    # conn.commit() wird jetzt von der aufrufenden Funktion gehandhabt, die die Transaktion verwaltet
+    # Nur die Debug-Ausgabe anpassen, um Ignorieren zu berücksichtigen
+    if cursor.rowcount == 0:
+        print(f"Skipping data for sensor {sensor_id} on {date}: Already exists.")
+    else:
+        print(f"Saved data for sensor {sensor_id} on {date}")
     print(f"Max P1: {stats['max_pollution_1']:.2f}, Max P2: {stats['max_pollution_2']:.2f}")
     print(f"Min P1: {stats['min_pollution_1']:.2f}, Min P2: {stats['min_pollution_2']:.2f}")
     print(f"Avg P1: {stats['average_P1']:.2f}, Avg P2: {stats['average_P2']:.2f}")
@@ -154,22 +162,6 @@ def print_database_stats():
         print(f"Sensor {sensor_id}: {count} entries")
     
     conn.close()
-
-def reset_database():
-    """Setzt die Datenbank zurück und initialisiert sie neu"""
-    conn = get_db_connection()
-    c = conn.cursor()
-    
-    # Lösche alle Tabellen
-    c.execute('DROP TABLE IF EXISTS sensor_data')
-    c.execute('DROP TABLE IF EXISTS downloaded_files')
-    
-    conn.commit()
-    conn.close()
-    
-    # Initialisiere die Datenbank neu
-    init_db()
-    print("Database has been reset and reinitialized")
 
 def load_sensor_data(sensor_id, sensor_type, date):
     conn = get_db_connection()

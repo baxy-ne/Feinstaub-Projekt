@@ -1,9 +1,7 @@
 from src.download.downloader import download_csv_files
 from src.core.processing import process_csv_data
-from src.core.database import init_db, save_sensor_data, print_database_stats, get_date_range_data
+from src.core.database import init_db, get_db_connection, save_sensor_data, print_database_stats, get_date_range_data
 import os
-
-init_db()
 
 def download_data(sensor_type, sensor_id, start_date, end_date, folder):
     print(f"\nDownloading data for sensor {sensor_id} from {start_date} to {end_date}")
@@ -13,6 +11,9 @@ def download_data(sensor_type, sensor_id, start_date, end_date, folder):
 def process_data(folder):
     print(f"\nVerarbeite Dateien im Ordner: {folder}")
     
+    conn = get_db_connection()
+    c = conn.cursor()
+
     if os.path.isfile(folder):
         result = process_csv_data(os.path.dirname(folder))
     else:
@@ -37,6 +38,9 @@ def process_data(folder):
                 'lat': data.get('lat'),
                 'lon': data.get('lon')
             }
-            save_sensor_data(data['sensor_id'], data['sensor_type'], data['date'], stats)
+            save_sensor_data(conn, c, data['sensor_id'], data['sensor_type'], data['date'], stats)
+    
+    conn.commit()
+    conn.close()
     print_database_stats()
     return result
