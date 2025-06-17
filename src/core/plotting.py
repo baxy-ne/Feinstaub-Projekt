@@ -30,20 +30,7 @@ def plot_sensor_data(sensor_id, start_date=None, end_date=None):
     df = df.reindex(full_range)
     df.index.name = 'date'
     
-    # Hole Standortinformationen aus den Daten
-    location = data[0].get('location', 'Unbekannt') if data else 'Unbekannt'
-    lat = data[0].get('lat', None) if data else None
-    lon = data[0].get('lon', None) if data else None
-    
-    # Erstelle den Titel mit Standortinformationen
-    title = f'Sensor {sensor_id} Air Quality Data'
-    if location and location != 'Unbekannt':
-        title += f'\nStandort: {location}'
-    if lat is not None and lon is not None:
-        title += f' (Lat: {lat:.3f}, Lon: {lon:.3f})'
-    
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
-    fig.suptitle(title, fontsize=14)
     
     # Plot P1 (PM10) data
     ax1.plot(df.index, df['max_p1'], 'r-', label='Max PM10', linewidth=1.5)

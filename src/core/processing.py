@@ -9,24 +9,14 @@ def process_csv_data(conn, c, filename, csv_content):
     try:
         df = pd.read_csv(io.StringIO(csv_content), sep=';')
         
-        print("Verfügbare Spalten in der CSV:")
-        print(df.columns)
-        
         date_str = filename.split('_')[0]
         
         sensor_id = str(df['sensor_id'].iloc[0])
         sensor_type = str(df['sensor_type'].iloc[0])
         
-        print(f"\nVerarbeite Daten für Sensor {sensor_id} vom {date_str}")
-        
         location = str(df['location'].iloc[0]) if 'location' in df.columns and not pd.isna(df['location'].iloc[0]) else None
         lat = float(df['lat'].iloc[0]) if 'lat' in df.columns and not pd.isna(df['lat'].iloc[0]) else None
         lon = float(df['lon'].iloc[0]) if 'lon' in df.columns and not pd.isna(df['lon'].iloc[0]) else None
-        
-        print(f"Standortinformationen aus den Daten:")
-        print(f"Location: {location}")
-        print(f"Lat: {lat}")
-        print(f"Lon: {lon}")
         
         stats = {
             'max_pollution_1': df['P1'].max() if 'P1' in df.columns else None,
@@ -62,10 +52,8 @@ def process_csv_data(conn, c, filename, csv_content):
         ))
         
         conn.commit()
-        print(f"Processed and inserted data for {filename}")
         mark_file_downloaded(conn, c, filename)
 
     except Exception as e:
-        print(f"Error processing {filename}: {e}")
         conn.rollback()
 
