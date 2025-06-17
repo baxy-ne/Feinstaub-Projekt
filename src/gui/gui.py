@@ -121,14 +121,36 @@ class SensorDataGUI:
             diagram_window.destroy()
             return
             
+        # Add buttons frame at the top
+        button_frame = ttk.Frame(diagram_window)
+        button_frame.pack(side=tk.TOP, pady=10)
+        
+        # Add save button
+        save_btn = ttk.Button(button_frame, text="Speichern", command=lambda: self.save_diagram(fig))
+        save_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Add close button
+        close_btn = ttk.Button(button_frame, text="Schließen", command=diagram_window.destroy)
+        close_btn.pack(side=tk.LEFT, padx=5)
+            
         # Create canvas and add it to the window
         canvas = FigureCanvasTkAgg(fig, master=diagram_window)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        
-        # Add a close button
-        close_btn = ttk.Button(diagram_window, text="Close", command=diagram_window.destroy)
-        close_btn.pack(pady=10)
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def save_diagram(self, fig):
+        filetypes = [
+            ('PDF Dateien', '*.pdf'),
+            ('PNG Dateien', '*.png')
+        ]
+        filename = filedialog.asksaveasfilename(
+            defaultextension='.pdf',
+            filetypes=filetypes,
+            title='Diagramm speichern'
+        )
+        if filename:
+            fig.savefig(filename, bbox_inches='tight', dpi=300)
+            messagebox.showinfo("Erfolg", "Diagramm wurde erfolgreich gespeichert!")
 
     def options_are_valid(self):
         if self.sensor_type.get() == "" or self.sensor_id.get() == "" or self.target_folder_var.get() == "":
