@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 from tkcalendar import DateEntry
-from datetime import date
-from src.core.view_model import download_data, process_data
+from datetime import date, timedelta
+from src.core.view_model import download_data
 from src.core.consts import CONST_NOT_ALL_FIELDS_FILLED, sensor_type_list
 from src.gui.utils import center_window
 from src.core.plotting import plot_sensor_data
@@ -24,11 +24,15 @@ class SensorDataGUI:
         # Date Range
         ttk.Label(self.root, text="Date range").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         
+        # Setze maxdate auf vorgestern für Startdatum und gestern für Enddatum
+        yesterday = date.today() - timedelta(days=1)
+        day_before_yesterday = date.today() - timedelta(days=2)
+        
         self.start_date = DateEntry(
             self.root,
             date_pattern='dd.MM.yyyy',
             state='readonly',
-            maxdate=date.today()
+            maxdate=day_before_yesterday
         )
         self.start_date.grid(row=0, column=1, padx=5)
         
@@ -37,7 +41,7 @@ class SensorDataGUI:
             date_pattern='dd.MM.yyyy',
             state='readonly',
             mindate=self.start_date.get_date(),
-            maxdate=date.today()
+            maxdate=yesterday
         )
         self.end_date.grid(row=0, column=2, padx=5)
         
@@ -53,16 +57,9 @@ class SensorDataGUI:
         self.sensor_id.grid(row=1, column=2, padx=5)
         self.sensor_id.insert(0, '31128')
         
-        # Target Folder
-        ttk.Label(self.root, text="target folder").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self.folder_entry = ttk.Entry(self.root, textvariable=self.target_folder_var, width=40, state='readonly')
-        self.folder_entry.grid(row=2, column=1, padx=5)
-        self.folder_btn = ttk.Button(self.root, text="...", command=self.pick_save_folder)
-        self.folder_btn.grid(row=2, column=2, padx=5)
-        
         # Aktions-Buttons Frame
         action_buttons_frame = ttk.Frame(self.root)
-        action_buttons_frame.grid(row=3, column=0, columnspan=3, pady=10, sticky="ew") # sticky "ew" für horizontale Ausdehnung
+        action_buttons_frame.grid(row=2, column=0, columnspan=3, pady=10, sticky="ew") # sticky "ew" für horizontale Ausdehnung
         self.root.grid_columnconfigure(1, weight=1) # Spalte 1 dehnbar machen
 
         self.download_btn = ttk.Button(action_buttons_frame, text="Download Data", command=self.load_data)
@@ -71,32 +68,26 @@ class SensorDataGUI:
         self.diagram_btn = ttk.Button(action_buttons_frame, text="show diagram", command=self.refresh_diagram)
         self.diagram_btn.pack(side=tk.TOP, padx=5, pady=2, expand=True, fill=tk.X)
         
-        # Status Label (moved to row 4 as buttons are now in row 3)
+        # Status Label (moved to row 3)
         self.status_label = ttk.Label(self.root, text="")
-        self.status_label.grid(row=4, column=0, columnspan=3, pady=10)
+        self.status_label.grid(row=3, column=0, columnspan=3, pady=10)
         
-    def pick_save_folder(self):
-        folder_selected = filedialog.askdirectory()
-        self.target_folder_var.set(folder_selected)
-
     def load_data(self):
         if not self.options_are_valid():
             messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
             return
-        print(f"load data {self.target_folder_var.get()} {self.sensor_type.get()} {self.sensor_id.get()}", 
-              self.start_date.get(), self.end_date.get(), self.target_folder_var.get())
+        print(f"load data {self.sensor_type.get()} {self.sensor_id.get()}", 
+              self.start_date.get(), self.end_date.get())
         
         # Lade Daten herunter
         download_data(
             self.sensor_type.get(),
             self.sensor_id.get(),
             self.start_date.get(),
-            self.end_date.get(),
-            self.target_folder_var.get()
+            self.end_date.get()
         )
         
-        # Verarbeite und speichere Daten in der DB
-        process_data(self.target_folder_var.get())
+        # process_data is now called within download_data, so no separate call here.
         messagebox.showinfo("Erfolg", "Daten erfolgreich heruntergeladen und in Datenbank gespeichert!")
 
     def refresh_diagram(self):
@@ -151,18 +142,18 @@ class SensorDataGUI:
             messagebox.showinfo("Erfolg", "Diagramm wurde erfolgreich gespeichert!")
 
     def options_are_valid(self):
-        if self.sensor_type.get() == "" or self.sensor_id.get() == "" or self.target_folder_var.get() == "":
+        if self.sensor_type.get() == "" or self.sensor_id.get() == "":
             return False
         return True
 
     def update_end_date_limit(self, event=None):
         new_start = self.start_date.get_date()
-        today = date.today()
-        self.end_date.config(mindate=new_start, maxdate=today)
+        yesterday = date.today() - timedelta(days=1)
+        self.end_date.config(mindate=new_start, maxdate=yesterday)
         if self.end_date.get_date() < new_start:
             self.end_date.set_date(new_start)
-        elif self.end_date.get_date() > today:
-            self.end_date.set_date(today)
+        elif self.end_date.get_date() > yesterday:
+            self.end_date.set_date(yesterday)
 
     def quit_app(self):
         """Beendet das Programm sauber"""

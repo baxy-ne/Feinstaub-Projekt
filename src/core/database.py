@@ -1,18 +1,17 @@
 import sqlite3
 import os
+from datetime import datetime
 
 def get_db_connection():
-    db_dir = os.path.dirname('data/sensor_data.db')
-    if db_dir and not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-    return sqlite3.connect('data/sensor_data.db')
+    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'sensor_data.db')
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    return sqlite3.connect(db_path)
 
 def init_db():
     """Initialisiert die Datenbank mit den notwendigen Tabellen"""
     conn = get_db_connection()
     c = conn.cursor()
     
-    # Erstelle die Tabelle sensor_data, falls sie nicht existiert
     c.execute('''
         CREATE TABLE IF NOT EXISTS sensor_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,25 +19,22 @@ def init_db():
             sensor_type TEXT NOT NULL,
             date TEXT NOT NULL,
             timestamp TEXT,
-            max_p1 REAL,
-            max_p2 REAL,
-            min_p1 REAL,
-            min_p2 REAL,
-            avg_p1 REAL,
-            avg_p2 REAL,
+            max_pollution_1 REAL,
+            max_pollution_2 REAL,
+            min_pollution_1 REAL,
+            min_pollution_2 REAL,
+            average_P1 REAL,
+            average_P2 REAL,
             location TEXT,
             lat REAL,
             lon REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(sensor_id, sensor_type, date)
+            UNIQUE(sensor_id, date)
         )
     ''')
     
-    # Erstelle die Tabelle downloaded_files, falls sie nicht existiert
     c.execute('''
         CREATE TABLE IF NOT EXISTS downloaded_files (
-            filename TEXT PRIMARY KEY,
-            downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            filename TEXT PRIMARY KEY
         )
     ''')
     
@@ -68,7 +64,6 @@ def save_sensor_data(conn, cursor, sensor_id, sensor_type, date, stats):
     """Speichert Sensordaten in der Datenbank.
     Akzeptiert conn und cursor als Argumente.
     """
-    # Debug-Ausgabe vor dem Speichern
     print("\nSpeichere Daten in der Datenbank:")
     print(f"Location: {stats.get('location', 'Nicht gefunden')}")
     print(f"Lat: {stats.get('lat', 'Nicht gefunden')}")
@@ -94,8 +89,6 @@ def save_sensor_data(conn, cursor, sensor_id, sensor_type, date, stats):
         stats.get('lon')
     ))
     
-    # conn.commit() wird jetzt von der aufrufenden Funktion gehandhabt, die die Transaktion verwaltet
-    # Nur die Debug-Ausgabe anpassen, um Ignorieren zu berücksichtigen
     if cursor.rowcount == 0:
         print(f"Skipping data for sensor {sensor_id} on {date}: Already exists.")
     else:
@@ -123,6 +116,10 @@ def get_date_range_data(sensor_id, start_date, end_date):
     conn = get_db_connection()
     c = conn.cursor()
     
+    sensor_id = str(sensor_id)
+    
+    print(f"\nSuche Daten für Sensor {sensor_id} von {start_date} bis {end_date}")
+    
     c.execute('''
         SELECT * FROM sensor_data 
         WHERE sensor_id = ? AND date BETWEEN ? AND ?
@@ -132,13 +129,14 @@ def get_date_range_data(sensor_id, start_date, end_date):
     columns = [description[0] for description in c.description]
     data = [dict(zip(columns, row)) for row in c.fetchall()]
     
-    # Debug-Ausgabe
     if data:
         print("\nGeladene Daten aus der Datenbank:")
         print(f"Anzahl der Datensätze: {len(data)}")
         print("Erster Datensatz:")
         for key, value in data[0].items():
             print(f"{key}: {value}")
+    else:
+        print(f"Keine Daten gefunden für Sensor {sensor_id} im Zeitraum {start_date} bis {end_date}")
     
     conn.close()
     return data
@@ -172,7 +170,6 @@ def load_sensor_data(sensor_id, sensor_type, date):
     print(f"Sensor Type: {sensor_type}")
     print(f"Datum: {date}")
     
-    # Debug: Zeige alle verfügbaren Daten für diesen Sensor
     c.execute('''
         SELECT * FROM sensor_data 
         WHERE sensor_id = ? AND sensor_type = ?
@@ -183,7 +180,6 @@ def load_sensor_data(sensor_id, sensor_type, date):
     for row in all_rows:
         print(f"Date: {row[3]}, Location: {row[10]}, Lat: {row[11]}, Lon: {row[12]}")
     
-    # Lade die spezifischen Daten für das angegebene Datum
     c.execute('''
         SELECT * FROM sensor_data 
         WHERE sensor_id = ? AND sensor_type = ? AND date = ?
@@ -216,4 +212,7 @@ def load_sensor_data(sensor_id, sensor_type, date):
         print(f"Lon: {data['lon']}")
         return data
     print("Keine Daten gefunden!")
-    return None 
+    return None
+
+def format_date_for_db(date):
+    return date.strftime('%Y-%m-%d') 
