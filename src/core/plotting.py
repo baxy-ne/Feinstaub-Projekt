@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from src.core.database import get_date_range_data
 import matplotlib.dates as mdates
+import mplcursors
 
 def plot_sensor_data(sensor_id, start_date=None, end_date=None):
 
@@ -72,5 +73,7 @@ def plot_sensor_data(sensor_id, start_date=None, end_date=None):
         ax.tick_params(axis='y', labelsize=9)
     
     fig.subplots_adjust(left=0.13, right=0.95, top=0.90, bottom=0.12, hspace=0.35)
+    
+    mplcursors.cursor()
     
     return fig 
