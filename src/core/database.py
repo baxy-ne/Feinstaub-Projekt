@@ -8,29 +8,35 @@ def get_db_connection():
     return sqlite3.connect('data/sensor_data.db')
 
 def init_db():
+    """Initialisiert die Datenbank mit den notwendigen Tabellen"""
     conn = get_db_connection()
     c = conn.cursor()
+    
+    # Lösche existierende Tabellen
+    c.execute('DROP TABLE IF EXISTS sensor_data')
+    
+    # Erstelle die Tabelle neu
     c.execute('''
-        CREATE TABLE IF NOT EXISTS sensor_data (
+        CREATE TABLE sensor_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sensor_id TEXT,
-            sensor_type TEXT,
-            date TEXT,
+            sensor_id TEXT NOT NULL,
+            sensor_type TEXT NOT NULL,
+            date TEXT NOT NULL,
+            timestamp TEXT,
             max_p1 REAL,
             max_p2 REAL,
             min_p1 REAL,
             min_p2 REAL,
             avg_p1 REAL,
             avg_p2 REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            location TEXT,
+            lat REAL,
+            lon REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(sensor_id, sensor_type, date)
         )
     ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS downloaded_files (
-            filename TEXT PRIMARY KEY,
-            downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    
     conn.commit()
     conn.close()
     print("Database initialized")
@@ -57,20 +63,30 @@ def save_sensor_data(sensor_id, sensor_type, date, stats):
     conn = get_db_connection()
     c = conn.cursor()
     
+    # Debug-Ausgabe vor dem Speichern
+    print("\nSpeichere Daten in der Datenbank:")
+    print(f"Location: {stats.get('location', 'Nicht gefunden')}")
+    print(f"Lat: {stats.get('lat', 'Nicht gefunden')}")
+    print(f"Lon: {stats.get('lon', 'Nicht gefunden')}")
+    
     c.execute('''
         INSERT INTO sensor_data 
-        (sensor_id, sensor_type, date, max_p1, max_p2, min_p1, min_p2, avg_p1, avg_p2)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (sensor_id, sensor_type, date, timestamp, max_p1, max_p2, min_p1, min_p2, avg_p1, avg_p2, location, lat, lon)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         sensor_id,
         sensor_type,
         date,
+        stats.get('timestamp', ''),
         stats['max_pollution_1'],
         stats['max_pollution_2'],
         stats['min_pollution_1'],
         stats['min_pollution_2'],
         stats['average_P1'],
-        stats['average_P2']
+        stats['average_P2'],
+        stats.get('location', ''),
+        stats.get('lat'),
+        stats.get('lon')
     ))
     
     conn.commit()
@@ -107,6 +123,15 @@ def get_date_range_data(sensor_id, start_date, end_date):
     
     columns = [description[0] for description in c.description]
     data = [dict(zip(columns, row)) for row in c.fetchall()]
+    
+    # Debug-Ausgabe
+    if data:
+        print("\nGeladene Daten aus der Datenbank:")
+        print(f"Anzahl der Datensätze: {len(data)}")
+        print("Erster Datensatz:")
+        for key, value in data[0].items():
+            print(f"{key}: {value}")
+    
     conn.close()
     return data
 
@@ -128,4 +153,75 @@ def print_database_stats():
     for sensor_id, count in sensor_stats:
         print(f"Sensor {sensor_id}: {count} entries")
     
-    conn.close() 
+    conn.close()
+
+def reset_database():
+    """Setzt die Datenbank zurück und initialisiert sie neu"""
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # Lösche alle Tabellen
+    c.execute('DROP TABLE IF EXISTS sensor_data')
+    c.execute('DROP TABLE IF EXISTS downloaded_files')
+    
+    conn.commit()
+    conn.close()
+    
+    # Initialisiere die Datenbank neu
+    init_db()
+    print("Database has been reset and reinitialized")
+
+def load_sensor_data(sensor_id, sensor_type, date):
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    print(f"\nLade Daten aus der Datenbank für:")
+    print(f"Sensor ID: {sensor_id}")
+    print(f"Sensor Type: {sensor_type}")
+    print(f"Datum: {date}")
+    
+    # Debug: Zeige alle verfügbaren Daten für diesen Sensor
+    c.execute('''
+        SELECT * FROM sensor_data 
+        WHERE sensor_id = ? AND sensor_type = ?
+    ''', (sensor_id, sensor_type))
+    
+    all_rows = c.fetchall()
+    print("\nAlle verfügbaren Daten für diesen Sensor:")
+    for row in all_rows:
+        print(f"Date: {row[3]}, Location: {row[10]}, Lat: {row[11]}, Lon: {row[12]}")
+    
+    # Lade die spezifischen Daten für das angegebene Datum
+    c.execute('''
+        SELECT * FROM sensor_data 
+        WHERE sensor_id = ? AND sensor_type = ? AND date = ?
+    ''', (sensor_id, sensor_type, date))
+    
+    row = c.fetchone()
+    conn.close()
+    
+    if row:
+        print("\nGeladene Daten aus der Datenbank:")
+        print(f"Location: {row[10] if row[10] else 'Nicht gefunden'}")
+        print(f"Lat: {row[11] if row[11] else 'Nicht gefunden'}")
+        print(f"Lon: {row[12] if row[12] else 'Nicht gefunden'}")
+        
+        data = {
+            'timestamp': row[3],
+            'max_pollution_1': row[4],
+            'max_pollution_2': row[5],
+            'min_pollution_1': row[6],
+            'min_pollution_2': row[7],
+            'average_P1': row[8],
+            'average_P2': row[9],
+            'location': row[10] if row[10] else '',
+            'lat': row[11],
+            'lon': row[12]
+        }
+        print("\nZurückgegebene Daten:")
+        print(f"Location: {data['location']}")
+        print(f"Lat: {data['lat']}")
+        print(f"Lon: {data['lon']}")
+        return data
+    print("Keine Daten gefunden!")
+    return None 

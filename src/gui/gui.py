@@ -13,8 +13,11 @@ class SensorDataGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("GUI concept")
-        self.root.geometry("700x200")
+        self.root.geometry("600x200")
         center_window(self.root)
+        
+        # Bindet das Schließen des Fensters an die quit_app Methode
+        self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
         
         self.target_folder_var = tk.StringVar()
         
@@ -64,6 +67,10 @@ class SensorDataGUI:
         self.process_btn = ttk.Button(self.root, text="Save Data to DB", command=self.load_data_2)
         self.process_btn.grid(row=3, column=2, padx=5)
         
+        # Reset Button
+        self.reset_btn = ttk.Button(self.root, text="Reset DB", command=self.reset_database)
+        self.reset_btn.grid(row=3, column=3, padx=5)
+        
         # Diagram Button
         self.diagram_btn = ttk.Button(self.root, text="show diagram", command=self.refresh_diagram)
         self.diagram_btn.grid(row=4, column=2, sticky="e", padx=5, pady=10)
@@ -71,10 +78,6 @@ class SensorDataGUI:
         # Status Label
         self.status_label = ttk.Label(self.root, text="")
         self.status_label.grid(row=5, column=0, columnspan=3, pady=10)
-        
-        # Progress Bar
-        self.progress = ttk.Progressbar(self.root, length=300, mode='determinate')
-        self.progress.grid(row=6, column=0, columnspan=3, pady=10)
         
     def pick_save_folder(self):
         folder_selected = filedialog.askdirectory()
@@ -109,7 +112,7 @@ class SensorDataGUI:
         # Create a new window for the diagram
         diagram_window = tk.Toplevel(self.root)
         diagram_window.title(f"Sensor {self.sensor_id.get()} Data")
-        diagram_window.geometry("1200x900")  # Increased window size
+        diagram_window.geometry("1200x1000")  # Fensterhöhe erhöht
         center_window(diagram_window)
         
         # Get the figure from plotting module
@@ -165,6 +168,19 @@ class SensorDataGUI:
             self.end_date.set_date(new_start)
         elif self.end_date.get_date() > today:
             self.end_date.set_date(today)
+
+    def quit_app(self):
+        """Beendet das Programm sauber"""
+        plt.close('all')  # Schließt alle Matplotlib-Fenster
+        self.root.destroy()  # Schließt das Hauptfenster
+
+    def reset_database(self):
+        """Setzt die Datenbank zurück"""
+        if messagebox.askyesno("Datenbank zurücksetzen", 
+                             "Möchten Sie die Datenbank wirklich zurücksetzen?\nAlle gespeicherten Daten gehen verloren!"):
+            from src.core.database import reset_database
+            reset_database()
+            messagebox.showinfo("Erfolg", "Datenbank wurde zurückgesetzt!")
 
 def main():
     root = tk.Tk()

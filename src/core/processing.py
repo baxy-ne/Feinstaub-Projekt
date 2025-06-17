@@ -6,10 +6,14 @@ def process_csv_data(folder):
     for filename in os.listdir(folder):
         if filename.endswith('.csv'):
             file_path = os.path.join(folder, filename)
-            print(f"Processing file: {filename}")
+            print(f"\nVerarbeite Datei: {filename}")
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
-                    reader = csv.DictReader(file, delimiter=';') 
+                    reader = csv.DictReader(file, delimiter=';')
+                    
+                    # Debug: Zeige die verfügbaren Spalten
+                    print("Verfügbare Spalten in der CSV:")
+                    print(reader.fieldnames)
 
                     max_p1 = float('-inf')
                     min_p1 = float('inf')
@@ -21,9 +25,18 @@ def process_csv_data(folder):
                     pollution_values_p1 = []
                     pollution_values_p2 = []
                     timestamps = []
+                    location = None
+                    lat = None
+                    lon = None
 
                     for row in reader:
                         try:
+                            # Debug: Zeige die ersten paar Zeilen
+                            if count < 3:
+                                print("\nBeispiel-Zeile aus CSV:")
+                                for key, value in row.items():
+                                    print(f"{key}: {value}")
+
                             if row.get('sensor_type', '').lower() != 'sds011':
                                 print(f"  Skipping row: sensor_type is '{row.get('sensor_type', '')}'")
                                 continue
@@ -50,8 +63,25 @@ def process_csv_data(folder):
                             pollution_values_p1.append(current_pollution_P1)
                             pollution_values_p2.append(current_pollution_P2)
                             timestamps.append(row.get('timestamp', ''))
+                            
+                            # Speichere Standortinformationen, wenn verfügbar
+                            if not location and row.get('location'):
+                                location = row.get('location')
+                                print(f"Gefundene Location: {location}")
+                            if not lat and row.get('lat'):
+                                try:
+                                    lat = float(row.get('lat'))
+                                    print(f"Gefundene Latitude: {lat}")
+                                except (ValueError, TypeError):
+                                    lat = None
+                            if not lon and row.get('lon'):
+                                try:
+                                    lon = float(row.get('lon'))
+                                    print(f"Gefundene Longitude: {lon}")
+                                except (ValueError, TypeError):
+                                    lon = None
                                 
-                        except (ValueError, KeyError):
+                        except (ValueError, KeyError) as e:
                             print(f"  Warning: Skipping invalid row in {filename}: {e}")
                             continue
                     
@@ -63,6 +93,12 @@ def process_csv_data(folder):
                         date_str = parts[0]
                         sensor_type = parts[1] if len(parts) > 2 else 'unknown'
                         sensor_id = parts[3].split('.')[0] if len(parts) > 3 else 'unknown'
+                        
+                        # Debug-Ausgabe für Standortinformationen
+                        print(f"\nZusammenfassung für Sensor {sensor_id}:")
+                        print(f"Location: {location}")
+                        print(f"Lat: {lat}")
+                        print(f"Lon: {lon}")
                         
                         result = {
                             'date': date_str,
@@ -76,7 +112,10 @@ def process_csv_data(folder):
                             'avg_p2': avg_p2,
                             'pollution_values_p1': pollution_values_p1,
                             'pollution_values_p2': pollution_values_p2,
-                            'timestamps': timestamps
+                            'timestamps': timestamps,
+                            'location': location,
+                            'lat': lat,
+                            'lon': lon
                         }
                         results.append(result)
                         

@@ -15,6 +15,13 @@ def plot_sensor_data(sensor_id, start_date=None, end_date=None):
     if not data:
         return None
         
+    # Debug-Ausgabe für die Standortinformationen
+    print("\nStandortinformationen aus den Daten:")
+    if data:
+        print(f"Location: {data[0].get('location', 'Nicht gefunden')}")
+        print(f"Lat: {data[0].get('lat', 'Nicht gefunden')}")
+        print(f"Lon: {data[0].get('lon', 'Nicht gefunden')}")
+    
     df = pd.DataFrame(data)
     df['date'] = pd.to_datetime(df['date'])
     df = df.groupby('date').mean(numeric_only=True)
@@ -23,8 +30,20 @@ def plot_sensor_data(sensor_id, start_date=None, end_date=None):
     df = df.reindex(full_range)
     df.index.name = 'date'
     
+    # Hole Standortinformationen aus den Daten
+    location = data[0].get('location', 'Unbekannt') if data else 'Unbekannt'
+    lat = data[0].get('lat', None) if data else None
+    lon = data[0].get('lon', None) if data else None
+    
+    # Erstelle den Titel mit Standortinformationen
+    title = f'Sensor {sensor_id} Air Quality Data'
+    if location and location != 'Unbekannt':
+        title += f'\nStandort: {location}'
+    if lat is not None and lon is not None:
+        title += f' (Lat: {lat:.3f}, Lon: {lon:.3f})'
+    
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
-    fig.suptitle(f'Sensor {sensor_id} Air Quality Data', fontsize=14)
+    fig.suptitle(title, fontsize=14)
     
     # Plot P1 (PM10) data
     ax1.plot(df.index, df['max_p1'], 'r-', label='Max PM10', linewidth=1.5)
