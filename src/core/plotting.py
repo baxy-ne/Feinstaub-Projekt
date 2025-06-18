@@ -33,18 +33,18 @@ def plot_sensor_data(sensor_id, start_date=None, end_date=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
     
     # Plot P1 (PM10) data
-    ax1.plot(df.index, df['max_p1'], 'r-', label='Max PM10', linewidth=1.5)
-    ax1.plot(df.index, df['min_p1'], 'b-', label='Min PM10', linewidth=1.5)
-    ax1.plot(df.index, df['avg_p1'], 'g-', label='Avg PM10', linewidth=1.5)
+    ax1.plot(df.index, df['max_pollution_1'], 'r-', label='Max PM10', linewidth=1.5)
+    ax1.plot(df.index, df['min_pollution_1'], 'b-', label='Min PM10', linewidth=1.5)
+    ax1.plot(df.index, df['average_P1'], 'g-', label='Avg PM10', linewidth=1.5)
     ax1.set_ylabel('PM10 (µg/m³)', fontsize=10)
     ax1.set_title('PM10 Measurements', fontsize=12, pad=15)
     ax1.grid(True)
     ax1.legend(fontsize=9)
     
     # Plot P2 (PM2.5) data
-    ax2.plot(df.index, df['max_p2'], 'r-', label='Max PM2.5', linewidth=1.5)
-    ax2.plot(df.index, df['min_p2'], 'b-', label='Min PM2.5', linewidth=1.5)
-    ax2.plot(df.index, df['avg_p2'], 'g-', label='Avg PM2.5', linewidth=1.5)
+    ax2.plot(df.index, df['max_pollution_2'], 'r-', label='Max PM2.5', linewidth=1.5)
+    ax2.plot(df.index, df['min_pollution_2'], 'b-', label='Min PM2.5', linewidth=1.5)
+    ax2.plot(df.index, df['average_P2'], 'g-', label='Avg PM2.5', linewidth=1.5)
     ax2.set_xlabel('Date', fontsize=10, labelpad=10)
     ax2.set_ylabel('PM2.5 (µg/m³)', fontsize=10)
     ax2.set_title('PM2.5 Measurements', fontsize=12, pad=15)

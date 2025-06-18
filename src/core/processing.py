@@ -33,7 +33,7 @@ def process_csv_data(conn, c, filename, csv_content):
         
         c.execute('''
             INSERT OR IGNORE INTO sensor_data 
-            (sensor_id, sensor_type, date, timestamp, max_p1, max_p2, min_p1, min_p2, avg_p1, avg_p2, location, lat, lon)
+            (sensor_id, sensor_type, date, timestamp, max_pollution_1, max_pollution_2, min_pollution_1, min_pollution_2, average_P1, average_P2, location, lat, lon)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             sensor_id,

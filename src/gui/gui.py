@@ -58,6 +58,11 @@ class SensorDataGUI:
         self.sensor_id.grid(row=1, column=2, padx=5)
         self.sensor_id.insert(0, '31128')
         
+        # Configure grid weights to center the content
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=0)
+        self.root.grid_columnconfigure(2, weight=1)
+        
         # New Labels for Sensor Title and Location
         self.sensor_title_label = ttk.Label(self.root, text="", font=("TkDefaultFont", 14, "bold"), anchor="center")
         self.sensor_title_label.grid(row=2, column=0, columnspan=3, pady=(10, 0), sticky="ew")
@@ -72,9 +77,14 @@ class SensorDataGUI:
         self.download_btn = ttk.Button(action_buttons_frame, text="Download Data", command=self.load_data)
         self.download_btn.pack(side=tk.TOP, padx=5, pady=2, expand=True, fill=tk.X)
         
-        # Status Label (moved to row 5)
+        # Progress Bar
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(self.root, variable=self.progress_var, maximum=100)
+        self.progress_bar.grid(row=5, column=0, columnspan=3, pady=(10, 5), sticky="ew", padx=5)
+        
+        # Status Label (moved to row 6)
         self.status_label = ttk.Label(self.root, text="")
-        self.status_label.grid(row=5, column=0, columnspan=3, pady=10)
+        self.status_label.grid(row=6, column=0, columnspan=3, pady=5)
         
     def update_sensor_and_location_labels(self):
         sensor_id = self.sensor_id.get()
@@ -109,21 +119,108 @@ class SensorDataGUI:
         if not self.options_are_valid():
             messagebox.showerror("Error", CONST_NOT_ALL_FIELDS_FILLED)
             return
-        print(f"load data {self.sensor_type.get()} {self.sensor_id.get()}", 
-              self.start_date.get(), self.end_date.get())
         
-        # Lade Daten herunter
-        if download_data(
-            self.sensor_type.get(),
-            self.sensor_id.get(),
-            self.start_date.get(),
-            self.end_date.get()
-        ):
-            messagebox.showinfo("Erfolg", "Daten erfolgreich heruntergeladen und in Datenbank gespeichert!")
-            self.update_sensor_and_location_labels() # Update labels after successful download
-            self.refresh_diagram()
-        else:
-            messagebox.showerror("Fehler", "Fehler beim Herunterladen oder Verarbeiten der Daten.")
+        # Disable download button and reset progress
+        self.download_btn.config(state='disabled')
+        self.progress_var.set(0)
+        self.status_label.config(text="Bereite Download vor...")
+        self.root.update()
+        
+        try:
+            print(f"load data {self.sensor_type.get()} {self.sensor_id.get()}", 
+                  self.start_date.get(), self.end_date.get())
+            
+            # Lade Daten herunter mit Progress Updates
+            if self.download_data_with_progress(
+                self.sensor_type.get(),
+                self.sensor_id.get(),
+                self.start_date.get(),
+                self.end_date.get()
+            ):
+                self.status_label.config(text="Download erfolgreich abgeschlossen!")
+                messagebox.showinfo("Erfolg", "Daten erfolgreich heruntergeladen und in Datenbank gespeichert!")
+                self.update_sensor_and_location_labels() # Update labels after successful download
+                self.refresh_diagram()
+            else:
+                self.status_label.config(text="Download fehlgeschlagen!")
+                messagebox.showerror("Fehler", "Fehler beim Herunterladen oder Verarbeiten der Daten.")
+        finally:
+            # Re-enable download button
+            self.download_btn.config(state='normal')
+    
+    def download_data_with_progress(self, sensor_type, sensor_id, start_date, end_date):
+        """Download data with progress updates"""
+        try:
+            from src.download.downloader import download_csv_files
+            from src.core.processing import process_csv_data
+            from src.core.database import init_db, get_db_connection, print_database_stats
+            import datetime
+            
+            self.status_label.config(text="Initialisiere Datenbank...")
+            self.progress_var.set(10)
+            self.root.update()
+            
+            init_db()
+            
+            self.status_label.config(text="Bereite Download vor...")
+            self.progress_var.set(20)
+            self.root.update()
+            
+            # Convert dates
+            if isinstance(start_date, str):
+                start_date = datetime.datetime.strptime(start_date, '%d.%m.%Y').date()
+            if isinstance(end_date, str):
+                end_date = datetime.datetime.strptime(end_date, '%d.%m.%Y').date()
+            
+            # Calculate total days for progress
+            total_days = (end_date - start_date).days + 1
+            
+            self.status_label.config(text="Lade Daten herunter...")
+            self.progress_var.set(30)
+            self.root.update()
+            
+            downloaded_contents = download_csv_files(start_date, end_date, sensor_type, sensor_id, None)
+            
+            if not downloaded_contents:
+                self.status_label.config(text="Keine neuen Daten zum Herunterladen gefunden.")
+                self.progress_var.set(100)
+                self.root.update()
+                return True
+            
+            self.status_label.config(text="Verarbeite heruntergeladene Daten...")
+            self.progress_var.set(50)
+            self.root.update()
+            
+            conn = get_db_connection()
+            c = conn.cursor()
+            
+            # Process each downloaded file with progress updates
+            for i, (filename, csv_content) in enumerate(downloaded_contents):
+                progress = 50 + (i / len(downloaded_contents)) * 40  # 50% to 90%
+                self.progress_var.set(progress)
+                self.status_label.config(text=f"Verarbeite {filename}... ({i+1}/{len(downloaded_contents)})")
+                self.root.update()
+                
+                process_csv_data(conn, c, filename, csv_content)
+            
+            conn.close()
+            
+            self.status_label.config(text="Finalisiere...")
+            self.progress_var.set(90)
+            self.root.update()
+            
+            print_database_stats()
+            
+            self.progress_var.set(100)
+            self.status_label.config(text="Download abgeschlossen!")
+            self.root.update()
+            
+            return True
+            
+        except Exception as e:
+            self.status_label.config(text=f"Fehler: {str(e)}")
+            print(f"Error in download_data_with_progress: {e}")
+            return False
 
     def refresh_diagram(self):
         if not self.options_are_valid():
@@ -149,8 +246,8 @@ class SensorDataGUI:
         # Create a frame for the diagram to ensure proper packing and destruction
         diagram_frame = ttk.Frame(self.root)
         diagram_frame._is_diagram_frame = True # Mark this frame for easy identification
-        diagram_frame.grid(row=6, column=0, columnspan=3, pady=(10, 0), sticky="nsew") # Reduced pady on top
-        self.root.grid_rowconfigure(6, weight=1) # Make row 6 expandable
+        diagram_frame.grid(row=7, column=0, columnspan=3, pady=(10, 0), sticky="nsew") # Reduced pady on top
+        self.root.grid_rowconfigure(7, weight=1) # Make row 7 expandable
 
         # Add buttons frame at the top of the diagram frame
         button_frame = ttk.Frame(diagram_frame)
